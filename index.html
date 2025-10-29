@@ -486,7 +486,7 @@
               K_AB = Y_B^K_A mod p = Y_A^K_B mod p = α^(K_A * K_B) mod p
             </div>
             <p>
-              <strong>Безпека:</strong> Зловмисник бачить p, α, Y_A, Y_B, але не може обчислити K_AB без знання K_A або K_B 
+              <strong>Безпека:</strong> Зловмисник бачить p, α, Y_A, Y_B, але не може обчислити K_AB без знання K_A або K_B
             </p>
           </div>
 
@@ -726,7 +726,7 @@
       }
 
       function connectToServer() {
-        socket = io('http://localhost:3000');
+        socket = io('https://test-3c2v.onrender.com');
 
         socket.on('connect', () => {
           updateStatus(true);
