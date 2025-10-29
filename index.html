@@ -1,0 +1,1052 @@
+<!doctype html>
+<html lang="uk">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Diffie-Hellman - Користувач B</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        padding: 20px;
+      }
+
+      .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        background: white;
+        border-radius: 15px;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+        overflow: hidden;
+      }
+
+      .header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 30px;
+        text-align: center;
+      }
+
+      .header h1 {
+        font-size: 32px;
+        margin-bottom: 10px;
+      }
+
+      .status {
+        display: inline-block;
+        padding: 10px 20px;
+        border-radius: 25px;
+        font-size: 14px;
+        font-weight: bold;
+        margin-top: 10px;
+      }
+
+      .status.connected {
+        background: #10b981;
+      }
+
+      .status.disconnected {
+        background: #ef4444;
+      }
+
+      .content {
+        padding: 30px;
+      }
+
+      /* Кроки протоколу */
+      .steps-container {
+        display: grid;
+        gap: 20px;
+        margin-bottom: 30px;
+      }
+
+      .step {
+        background: #f9fafb;
+        padding: 20px;
+        border-radius: 10px;
+        border-left: 5px solid #d1d5db;
+        transition: all 0.3s;
+        opacity: 0.5;
+      }
+
+      .step.active {
+        border-left-color: #667eea;
+        background: #ede9fe;
+        opacity: 1;
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+      }
+
+      .step.completed {
+        border-left-color: #10b981;
+        background: #d1fae5;
+        opacity: 1;
+      }
+
+      .step-header {
+        display: flex;
+        align-items: center;
+        margin-bottom: 10px;
+      }
+
+      .step-number {
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        background: #d1d5db;
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        margin-right: 10px;
+        transition: all 0.3s;
+      }
+
+      .step.active .step-number {
+        background: #667eea;
+        transform: scale(1.2);
+      }
+
+      .step.completed .step-number {
+        background: #10b981;
+      }
+
+      .step-title {
+        font-size: 18px;
+        font-weight: bold;
+        color: #374151;
+      }
+
+      .step-content {
+        margin-left: 40px;
+        color: #6b7280;
+        font-size: 14px;
+      }
+
+      .step-data {
+        margin-top: 10px;
+        padding: 10px;
+        background: white;
+        border-radius: 5px;
+        font-family: 'Courier New', monospace;
+        word-break: break-all;
+      }
+
+      .section {
+        background: #f9fafb;
+        padding: 20px;
+        border-radius: 10px;
+        margin-bottom: 20px;
+      }
+
+      .section h2 {
+        color: #374151;
+        margin-bottom: 15px;
+        font-size: 20px;
+      }
+
+      .params {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 15px;
+        margin: 15px 0;
+      }
+
+      .param-item {
+        background: white;
+        padding: 15px;
+        border-radius: 8px;
+        border-left: 4px solid #667eea;
+      }
+
+      .param-label {
+        font-size: 12px;
+        color: #6b7280;
+        margin-bottom: 5px;
+      }
+
+      .param-value {
+        font-size: 18px;
+        font-weight: bold;
+        color: #1f2937;
+        word-break: break-all;
+      }
+
+      .secret {
+        background: #fef3c7;
+        border-left-color: #f59e0b;
+      }
+
+      .shared-secret {
+        background: #d1fae5;
+        border-left-color: #10b981;
+        font-size: 24px;
+        text-align: center;
+        padding: 20px;
+      }
+
+      .buttons {
+        display: flex;
+        gap: 15px;
+        margin-top: 20px;
+      }
+
+      button {
+        flex: 1;
+        padding: 15px 30px;
+        font-size: 16px;
+        font-weight: bold;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.3s;
+      }
+
+      button:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+
+      button:not(:disabled):hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+      }
+
+      .btn-primary {
+        background: #667eea;
+        color: white;
+      }
+
+      .btn-success {
+        background: #10b981;
+        color: white;
+      }
+
+      .btn-secondary {
+        background: #6b7280;
+        color: white;
+      }
+
+      .log-section {
+        background: #1f2937;
+        color: #f9fafb;
+        border-radius: 8px;
+        padding: 20px;
+        max-height: 400px;
+        overflow-y: auto;
+        font-family: 'Courier New', monospace;
+        font-size: 13px;
+      }
+
+      .log-item {
+        margin-bottom: 8px;
+        padding: 5px 0;
+        border-bottom: 1px solid #374151;
+        animation: fadeIn 0.3s;
+      }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(-10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .log-time {
+        color: #9ca3af;
+        margin-right: 10px;
+      }
+
+      .formula {
+        background: #f3f4f6;
+        padding: 10px;
+        border-radius: 5px;
+        margin: 10px 0;
+        font-family: 'Courier New', monospace;
+        font-size: 14px;
+        text-align: center;
+        color: #4b5563;
+      }
+
+      .alert {
+        padding: 15px;
+        border-radius: 8px;
+        margin: 15px 0;
+        font-weight: 500;
+      }
+
+      .alert-success {
+        background: #d1fae5;
+        color: #065f46;
+        border: 2px solid #10b981;
+      }
+
+      .alert-error {
+        background: #fee2e2;
+        color: #991b1b;
+        border: 2px solid #ef4444;
+      }
+
+      .primes-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        gap: 10px;
+        margin: 15px 0;
+      }
+
+      .prime-item {
+        background: white;
+        padding: 10px;
+        border-radius: 5px;
+        text-align: center;
+        border: 2px solid #667eea;
+      }
+
+      .prime-number {
+        font-size: 18px;
+        font-weight: bold;
+        color: #667eea;
+      }
+
+      .prime-attempts {
+        font-size: 12px;
+        color: #6b7280;
+        margin-top: 5px;
+      }
+
+      .alert-info {
+        background: #dbeafe;
+        color: #1e40af;
+        border: 2px solid #3b82f6;
+      }
+
+      .theory-section {
+        background: #f0fdf4;
+        border: 2px solid #10b981;
+        border-radius: 10px;
+        padding: 20px;
+        margin: 20px 0;
+      }
+
+      .theory-section h3 {
+        color: #065f46;
+        margin-bottom: 10px;
+      }
+
+      .theory-section p {
+        color: #047857;
+        line-height: 1.6;
+        margin: 10px 0;
+      }
+
+      .formula-box {
+        background: white;
+        padding: 15px;
+        border-radius: 8px;
+        margin: 10px 0;
+        border-left: 4px solid #10b981;
+        font-family: 'Courier New', monospace;
+      }
+
+      .info-box {
+        background: #fff7ed;
+        border: 2px solid #f59e0b;
+        border-radius: 8px;
+        padding: 15px;
+        margin: 15px 0;
+      }
+
+      .info-box h4 {
+        color: #92400e;
+        margin-bottom: 8px;
+      }
+
+      .info-box p {
+        color: #78350f;
+        line-height: 1.5;
+      }
+
+      .collapsible {
+        cursor: pointer;
+        padding: 15px;
+        background: #667eea;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        text-align: left;
+        width: 100%;
+        font-size: 16px;
+        font-weight: bold;
+        margin: 10px 0;
+      }
+
+      .collapsible:hover {
+        background: #5568d3;
+      }
+
+      .collapsible-content {
+        display: none;
+        padding: 15px;
+        background: #f9fafb;
+        border-radius: 8px;
+        margin-bottom: 10px;
+      }
+
+      .collapsible-content.active {
+        display: block;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">
+        <h1>🔐 Протокол Діффі-Хелмана</h1>
+        <h2>Користувач B (Клієнт)</h2>
+        <div class="status disconnected" id="status">🔴 Відключено</div>
+      </div>
+
+      <div class="content">
+        <!-- Теоретична довідка -->
+        <button class="collapsible" onclick="toggleSection('theory')">
+          📚 Теоретична довідка (натисніть щоб розгорнути)
+        </button>
+        <div class="collapsible-content" id="theory">
+          <div class="theory-section">
+            <h3>🔢 1. Тест Ферма для перевірки простоти</h3>
+            <p>
+              <strong>Мала теорема Ферма:</strong> Якщо p - просте число, а a - ціле число, не кратне p, то:
+            </p>
+            <div class="formula-box">
+              a^(p-1) ≡ 1 (mod p)
+            </div>
+            <p>
+              <strong>Як працює тест:</strong><br>
+              1. Вибираємо випадкове число a в діапазоні [2, p-2]<br>
+              2. Перевіряємо, чи НСД(a, p) = 1<br>
+              3. Обчислюємо a^(p-1) mod p<br>
+              4. Якщо результат не дорівнює 1, то p - складене число<br>
+              5. Повторюємо k разів (у нашому випадку k=4)
+            </p>
+            <p>
+              <strong>Важливо:</strong> Якщо число проходить тест k разів, воно є простим з ймовірністю не менше 1 - (1/2)^k.
+              При k=4 ймовірність помилки ≤ 6.25%.
+            </p>
+          </div>
+
+          <div class="theory-section">
+            <h3>🌿 2. Примітивний корінь (Primitive Root)</h3>
+            <p>
+              <strong>Визначення:</strong> Число α називається примітивним коренем по модулю p, якщо α генерує всі елементи мультиплікативної групи Z*_p.
+            </p>
+            <p>
+              <strong>Перевірка примітивності:</strong> α є примітивним коренем mod p, якщо для всіх простих дільників q числа (p-1):
+            </p>
+            <div class="formula-box">
+              α^((p-1)/q) ≢ 1 (mod p)
+            </div>
+            <p>
+              <strong>Чому це важливо для Діффі-Хелмана?</strong><br>
+              Примітивний корінь гарантує, що всі можливі значення можуть бути згенеровані, що забезпечує максимальну безпеку протоколу.
+            </p>
+          </div>
+
+          <div class="theory-section">
+            <h3>🔐 3. Протокол Діффі-Хелмана</h3>
+            <p>
+              <strong>Мета:</strong> Два абоненти (A і B) створюють спільний секретний ключ по відкритому каналу зв'язку.
+            </p>
+            <p><strong>Крок 1 - Генерація відкритих параметрів:</strong></p>
+            <div class="formula-box">
+              p - велике просте число (у нас з [5000, 10000])<br>
+              α - примітивний корінь по модулю p
+            </div>
+            <p><strong>Крок 2 - Генерація секретних ключів:</strong></p>
+            <div class="formula-box">
+              K_A - секретний ключ абонента A (випадкове число: 2 ≤ K_A ≤ p-2)<br>
+              K_B - секретний ключ абонента B (випадкове число: 2 ≤ K_B ≤ p-2)
+            </div>
+            <p><strong>Крок 3 - Обчислення публічних ключів:</strong></p>
+            <div class="formula-box">
+              Y_A = α^K_A mod p<br>
+              Y_B = α^K_B mod p
+            </div>
+            <p><strong>Крок 4 - Обмін публічними ключами та обчислення спільного секрету:</strong></p>
+            <div class="formula-box">
+              K_AB = Y_B^K_A mod p = Y_A^K_B mod p = α^(K_A * K_B) mod p
+            </div>
+            <p>
+              <strong>Безпека:</strong> Зловмисник бачить p, α, Y_A, Y_B, але не може обчислити K_AB без знання K_A або K_B 
+            </p>
+          </div>
+
+          <div class="theory-section">
+            <h3>📊 4. Середня кількість спроб для генерації простого числа</h3>
+            <p>
+              Згідно з теоремою про розподіл простих чисел, імовірність того, що випадкове число n є простим, приблизно дорівнює 1/ln(n).
+            </p>
+            <p>
+              Для чисел з діапазону [5000, 10000] середня ймовірність ≈ 1/ln(7500) ≈ 1/8.9 ≈ 11%.
+            </p>
+            <p>
+              <strong>Очікувана кількість спроб:</strong> приблизно 9-11 спроб для знаходження одного простого числа.
+            </p>
+          </div>
+        </div>
+
+        <!-- Кнопки управління -->
+        <div class="buttons">
+          <button
+            class="btn-primary"
+            onclick="initiateProtocol()"
+            id="btn-init"
+          >
+            🚀 Почати протокол
+          </button>
+          <button
+            class="btn-success"
+            onclick="sendPublicKey()"
+            id="btn-send"
+            disabled
+          >
+            📤 Відправити Y_B
+          </button>
+          <button class="btn-primary" onclick="generate10Primes()">
+            🔢 Згенерувати 10 простих
+          </button>
+          <button class="btn-secondary" onclick="clearAll()">
+            🗑️ Очистити
+          </button>
+        </div>
+
+        <!-- Результат перевірки -->
+        <div id="verification-result"></div>
+
+        <!-- Результат генерації 10 простих -->
+        <div id="primes-result"></div>
+
+        <!-- Кроки протоколу -->
+        <div class="steps-container">
+          <!-- Крок 1 -->
+          <div class="step" id="step-1">
+            <div class="step-header">
+              <div class="step-number">1</div>
+              <div class="step-title">
+                Підключення до сервера (Користувач A)
+              </div>
+            </div>
+            <div class="step-content">
+              Встановлення з'єднання з користувачем A через WebSocket
+              <div class="step-data" id="step-1-data"></div>
+            </div>
+          </div>
+
+          <!-- Крок 2 -->
+          <div class="step" id="step-2">
+            <div class="step-header">
+              <div class="step-number">2</div>
+              <div class="step-title">Отримання відкритих параметрів</div>
+            </div>
+            <div class="step-content">
+              Користувач A надсилає: просте число p, примітивний елемент α,
+              публічний ключ Y_A
+              <div class="info-box">
+                <h4>💡 Що відбувається:</h4>
+                <p>• <strong>p</strong> згенероване тестом Ферма (k=4) з діапазону [5000, 10000]</p>
+                <p>• <strong>α</strong> - примітивний корінь mod p (перевірено, що α^((p-1)/q) ≢ 1 для всіх простих q|(p-1))</p>
+                <p>• <strong>Y_A</strong> = α^K_A mod p (публічний ключ користувача A)</p>
+              </div>
+              <div class="step-data" id="step-2-data"></div>
+            </div>
+          </div>
+
+          <!-- Крок 3 -->
+          <div class="step" id="step-3">
+            <div class="step-header">
+              <div class="step-number">3</div>
+              <div class="step-title">Генерація секретного ключа B</div>
+            </div>
+            <div class="step-content">
+              Випадкова генерація секретного ключа k_B (2 ≤ k_B ≤ p-2)
+              <div class="info-box">
+                <h4>💡 Що відбувається:</h4>
+                <p>Генеруємо випадковий секретний ключ k_B. Цей ключ НІКОЛИ не передається по мережі і відомий лише користувачу B.</p>
+                <p>Обмеження: 2 ≤ k_B ≤ p-2</p>
+              </div>
+              <div class="step-data" id="step-3-data"></div>
+            </div>
+          </div>
+
+          <!-- Крок 4 -->
+          <div class="step" id="step-4">
+            <div class="step-header">
+              <div class="step-number">4</div>
+              <div class="step-title">Обчислення публічного ключа B</div>
+            </div>
+            <div class="step-content">
+              Обчислення Y_B = α^k_B mod p
+              <div class="info-box">
+                <h4>💡 Що відбувається:</h4>
+                <p>Обчислюємо публічний ключ Y_B використовуючи модульне піднесення до степеня.</p>
+                <p>Цей ключ БУДЕ відправлений користувачу A по відкритому каналу.</p>
+                <p>Зловмисник, який побачить Y_B, не зможе обчислити k_B (проблема дискретного логарифму).</p>
+              </div>
+              <div class="formula" id="step-4-formula"></div>
+              <div class="step-data" id="step-4-data"></div>
+            </div>
+          </div>
+
+          <!-- Крок 5 -->
+          <div class="step" id="step-5">
+            <div class="step-header">
+              <div class="step-number">5</div>
+              <div class="step-title">Обчислення спільного секрету</div>
+            </div>
+            <div class="step-content">
+              Обчислення K_AB = Y_A^k_B mod p
+              <div class="info-box">
+                <h4>💡 Що відбувається:</h4>
+                <p>Використовуємо отриманий публічний ключ Y_A від користувача A та наш секретний ключ k_B.</p>
+                <p><strong>Магія криптографії:</strong><br>
+                K_AB (від B) = Y_A^k_B mod p = (α^K_A)^k_B mod p = α^(K_A·k_B) mod p<br>
+                K_AB (від A) = Y_B^K_A mod p = (α^k_B)^K_A mod p = α^(K_A·k_B) mod p</p>
+                <p>Обидва абоненти отримають однаковий результат!</p>
+              </div>
+              <div class="formula" id="step-5-formula"></div>
+              <div class="step-data" id="step-5-data"></div>
+            </div>
+          </div>
+
+          <!-- Крок 6 -->
+          <div class="step" id="step-6">
+            <div class="step-header">
+              <div class="step-number">6</div>
+              <div class="step-title">
+                Відправка публічного ключа користувачу A
+              </div>
+            </div>
+            <div class="step-content">
+              Надсилання Y_B користувачу A для перевірки K_AB = Y_A^k_B mod p
+              <div class="step-data" id="step-6-data"></div>
+            </div>
+          </div>
+
+          <!-- Крок 7 -->
+          <div class="step" id="step-7">
+            <div class="step-header">
+              <div class="step-number">7</div>
+              <div class="step-title">Перевірка спільного секрету</div>
+            </div>
+            <div class="step-content">
+              Порівняння обчислених спільних секретів від A та B
+              <div class="info-box">
+                <h4>💡 Що відбувається:</h4>
+                <p>Перевіряємо, чи співпадають обчислені спільні секрети.</p>
+                <p><strong>Якщо співпадають:</strong> Протокол виконано успішно! Обидва абоненти мають однаковий секретний ключ K_AB, який можна використовувати для шифрування.</p>
+                <p><strong>Важливо:</strong> Ніхто, окрім A і B, не зміг обчислити K_AB, навіть якщо підслуховував весь обмін!</p>
+              </div>
+              <div class="step-data" id="step-7-data"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Детальна інформація -->
+        <div class="section">
+          <h2>📊 Детальна інформація</h2>
+          <div class="params">
+            <div class="param-item">
+              <div class="param-label">Просте число (p)</div>
+              <div class="param-value" id="param-p">—</div>
+            </div>
+            <div class="param-item">
+              <div class="param-label">Примітивний елемент (α)</div>
+              <div class="param-value" id="param-alpha">—</div>
+            </div>
+            <div class="param-item">
+              <div class="param-label">Публічний ключ A (Y_A)</div>
+              <div class="param-value" id="param-ya">—</div>
+            </div>
+            <div class="param-item">
+              <div class="param-label">Кількість спроб згенерувати ключ:</div>
+              <div class="param-value" id="param-attempts">—</div>
+            </div>
+            <div class="param-item secret">
+              <div class="param-label">🔐 Секретний ключ B (k_B)</div>
+              <div class="param-value" id="param-kb">—</div>
+            </div>
+            <div class="param-item">
+              <div class="param-label">Публічний ключ B (Y_B)</div>
+              <div class="param-value" id="param-yb">—</div>
+            </div>
+            <div class="param-item shared-secret">
+              <div class="param-label">💎 Спільний секрет (K_AB)</div>
+              <div class="param-value" id="shared-secret">—</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Лог -->
+        <div class="section">
+          <h2>📋 Лог подій</h2>
+          <div class="log-section" id="log"></div>
+        </div>
+      </div>
+    </div>
+
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+
+    <script>
+      let socket;
+      let serverParams = null;
+      let clientSecretKey = null;
+      let clientPublicKey = null;
+      let currentStep = 0;
+
+      function setStep(stepNumber) {
+        currentStep = stepNumber;
+        for (let i = 1; i <= 7; i++) {
+          const stepEl = document.getElementById(`step-${i}`);
+          stepEl.classList.remove('active', 'completed');
+          if (i < stepNumber) {
+            stepEl.classList.add('completed');
+          } else if (i === stepNumber) {
+            stepEl.classList.add('active');
+          }
+        }
+      }
+
+      function connectToServer() {
+        socket = io('http://localhost:3000');
+
+        socket.on('connect', () => {
+          updateStatus(true);
+          addLog('✅ Підключено до сервера (користувач A)');
+          setStep(1);
+          document.getElementById('step-1-data').innerHTML =
+            "✅ З'єднання встановлено";
+          setTimeout(() => setStep(1), 100);
+          document.getElementById('btn-init').disabled = false;
+        });
+
+        socket.on('disconnect', () => {
+          updateStatus(false);
+          addLog('❌ Відключено від сервера');
+          document.getElementById('btn-init').disabled = false;
+          document.getElementById('btn-send').disabled = true;
+          setStep(0);
+        });
+
+        socket.on('dhParameters', (data) => {
+          addLog('📨 Отримано відкриті параметри від користувача A');
+          addLog(`   p = ${data.primeNumber} (знайдено за ${data.attempts} спроб)`);
+          addLog(`   α = ${data.alpha} (примітивний корінь mod p)`);
+          addLog(`   Y_A = ${data.publicKey}`);
+
+          // Логуємо числа, які не пройшли тест
+          if (data.failedNumbers && data.failedNumbers.length > 0) {
+            addLog('❌ Приклади чисел, що НЕ пройшли тест Ферма:');
+            data.failedNumbers.forEach((failed) => {
+              addLog(`   ${failed.number} - ${failed.reason}`);
+            });
+          }
+
+          setStep(2);
+          let step2Html = `p = ${data.primeNumber}<br>α = ${data.alpha}<br>Y_A = ${data.publicKey}<br>Спроб: ${data.attempts}`;
+
+          if (data.failedNumbers && data.failedNumbers.length > 0) {
+            step2Html += '<br><br><small><strong>Не пройшли тест:</strong><br>';
+            data.failedNumbers.forEach((failed) => {
+              step2Html += `${failed.number} - ${failed.reason}<br>`;
+            });
+            step2Html += '</small>';
+          }
+
+          document.getElementById('step-2-data').innerHTML = step2Html;
+
+          serverParams = {
+            primeNumber: data.primeNumber,
+            alpha: data.alpha,
+            publicKeyA: data.publicKey,
+            attempts: data.attempts,
+          };
+
+          displayServerParams(serverParams);
+          generateClientKeys(serverParams);
+        });
+
+        socket.on('sharedSecretComputed', (data) => {
+          addLog('🎉 Отримано підтвердження від користувача A');
+          addLog(`💎 Спільний секрет (від A): ${data.sharedSecret}`);
+
+          setStep(7);
+          const localSecret = parseInt(
+            document.getElementById('shared-secret').textContent,
+          );
+          const serverSecret = data.sharedSecret;
+
+          document.getElementById('step-7-data').innerHTML =
+            `K_AB (від B) = ${localSecret}<br>K_AB (від A) = ${serverSecret}`;
+
+          const verificationDiv = document.getElementById(
+            'verification-result',
+          );
+          if (localSecret === serverSecret) {
+            addLog('✅ УСПІХ! Спільні секрети співпадають!');
+            addLog(`   K_AB = ${localSecret}`);
+            verificationDiv.innerHTML =
+              '<div class="alert alert-success">✅ УСПІХ! Спільні секрети співпадають! Протокол Діффі-Хелмана виконано успішно.</div>';
+          } else {
+            addLog('❌ ПОМИЛКА! Спільні секрети НЕ співпадають!');
+            addLog(`   K_AB (B) = ${localSecret}`);
+            addLog(`   K_AB (A) = ${serverSecret}`);
+            verificationDiv.innerHTML =
+              '<div class="alert alert-error">❌ ПОМИЛКА! Спільні секрети НЕ співпадають!</div>';
+          }
+        });
+
+        socket.on('error', (error) => {
+          addLog('⚠️ Помилка: ' + error.message);
+        });
+
+        socket.on('primes10Result', (data) => {
+          addLog('🔢 Згенеровано 10 простих чисел!');
+          addLog(`📊 Середня кількість спроб: ${data.averageAttempts.toFixed(2)}`);
+          addLog(`📊 Загальна кількість спроб: ${data.totalAttempts}`);
+
+          const primesDiv = document.getElementById('primes-result');
+          let html = '<div class="alert alert-info">';
+          html += `<h3>📊 Статистика генерації 10 простих чисел</h3>`;
+          html += `<div class="info-box">`;
+          html += `<h4>💡 Пояснення результатів:</h4>`;
+          html += `<p>Для генерації кожного простого числа використовується:</p>`;
+          html += `<p>• <strong>Тест Ферма з k=4:</strong> Кожне випадкове число перевіряється 4 рази</p>`;
+          html += `<p>• <strong>Діапазон:</strong> [5000, 10000]</p>`;
+          html += `<p>• <strong>Теоретична ймовірність:</strong> ≈ 1/ln(7500) ≈ 11% (очікувано ~9 спроб)</p>`;
+          html += `<p>• <strong>Ваш результат:</strong> ${data.averageAttempts.toFixed(2)} спроб у середньому</p>`;
+          html += `</div>`;
+          html += `<p><strong>Середня кількість спроб:</strong> ${data.averageAttempts.toFixed(2)}</p>`;
+          html += `<p><strong>Загальна кількість спроб:</strong> ${data.totalAttempts}</p>`;
+          html += '<div class="primes-grid">';
+
+          data.primes.forEach((prime, index) => {
+            html += `<div class="prime-item">`;
+            html += `<div class="prime-number">${prime}</div>`;
+            html += `<div class="prime-attempts">${data.attempts[index]} спроб</div>`;
+            html += `</div>`;
+          });
+
+          html += '</div>';
+
+          // Додаємо інформацію про числа, які не пройшли тест
+          if (data.failedNumbers && data.failedNumbers.length > 0) {
+            html += '<div class="info-box" style="margin-top: 20px;">';
+            html += '<h4>❌ Приклади чисел, що НЕ пройшли тест Ферма:</h4>';
+            html += '<p style="font-size: 12px; font-family: monospace;">';
+
+            data.failedNumbers.forEach((item) => {
+              html += `<strong>Для простого #${item.primeIndex}:</strong><br>`;
+              item.failures.forEach((failed) => {
+                html += `&nbsp;&nbsp;• ${failed.number} - ${failed.reason}<br>`;
+              });
+              html += '<br>';
+            });
+
+            html += '</p></div>';
+          }
+
+          html += '</div>';
+          primesDiv.innerHTML = html;
+
+          data.primes.forEach((prime, index) => {
+            addLog(`   ${index + 1}. p=${prime} (${data.attempts[index]} спроб)`);
+          });
+
+          // Логуємо невдалі спроби
+          if (data.failedNumbers && data.failedNumbers.length > 0) {
+            addLog('❌ Приклади чисел, що НЕ пройшли тест Ферма:');
+            data.failedNumbers.forEach((item) => {
+              addLog(`   Для простого #${item.primeIndex}:`);
+              item.failures.forEach((failed) => {
+                addLog(`      ${failed.number} - ${failed.reason}`);
+              });
+            });
+          }
+        });
+      }
+
+      function updateStatus(connected) {
+        const statusEl = document.getElementById('status');
+        if (connected) {
+          statusEl.textContent = '🟢 Підключено';
+          statusEl.className = 'status connected';
+        } else {
+          statusEl.textContent = '🔴 Відключено';
+          statusEl.className = 'status disconnected';
+        }
+      }
+
+      function displayServerParams(data) {
+        document.getElementById('param-p').textContent = data.primeNumber;
+        document.getElementById('param-alpha').textContent = data.alpha;
+        document.getElementById('param-ya').textContent = data.publicKeyA;
+        document.getElementById('param-attempts').textContent = data.attempts;
+      }
+
+      function initiateProtocol() {
+        addLog('🚀 Ініціація протоколу Діффі-Хелмана...');
+        socket.emit('initiateDH', { message: 'Користувач B готовий' });
+        document.getElementById('btn-init').disabled = true;
+        document.getElementById('verification-result').innerHTML = '';
+      }
+
+      function generateClientKeys(data) {
+        const { primeNumber, alpha, publicKeyA } = data;
+
+        // Крок 3: Генерація секретного ключа
+        setStep(3);
+        addLog('🔧 Генерація параметрів користувача B...');
+
+        clientSecretKey = Math.floor(Math.random() * (primeNumber - 3)) + 2;
+        addLog(`🔐 Згенеровано секретний ключ k_B = ${clientSecretKey}`);
+        document.getElementById('param-kb').textContent = clientSecretKey;
+        document.getElementById('step-3-data').innerHTML =
+          `k_B = ${clientSecretKey}`;
+
+        // Крок 4: Обчислення публічного ключа B
+        setTimeout(() => {
+          setStep(4);
+          clientPublicKey = modPow(alpha, clientSecretKey, primeNumber);
+          addLog(`🔑 Обчислено публічний ключ Y_B = α^k_B mod p`);
+          addLog(
+            `   Y_B = ${alpha}^${clientSecretKey} mod ${primeNumber} = ${clientPublicKey}`,
+          );
+          document.getElementById('param-yb').textContent = clientPublicKey;
+          document.getElementById('step-4-formula').innerHTML =
+            `Y_B = ${alpha}^${clientSecretKey} mod ${primeNumber}`;
+          document.getElementById('step-4-data').innerHTML =
+            `Y_B = ${clientPublicKey}`;
+
+          // Крок 5: Обчислення спільного секрету
+          setTimeout(() => {
+            setStep(5);
+            const sharedSecret = modPow(
+              publicKeyA,
+              clientSecretKey,
+              primeNumber,
+            );
+            addLog(`💎 Обчислено спільний секрет K_AB = Y_A^k_B mod p`);
+            addLog(
+              `   K_AB = ${publicKeyA}^${clientSecretKey} mod ${primeNumber} = ${sharedSecret}`,
+            );
+            document.getElementById('shared-secret').textContent = sharedSecret;
+            document.getElementById('step-5-formula').innerHTML =
+              `K_AB = ${publicKeyA}^${clientSecretKey} mod ${primeNumber}`;
+            document.getElementById('step-5-data').innerHTML =
+              `K_AB = ${sharedSecret}`;
+
+            document.getElementById('btn-send').disabled = false;
+            addLog('✅ Готово! Тепер можна відправити Y_B користувачу A');
+          }, 500);
+        }, 500);
+      }
+
+      function sendPublicKey() {
+        if (!clientPublicKey) {
+          alert('❌ Спочатку згенеруйте параметри!');
+          return;
+        }
+
+        setStep(6);
+        addLog('📤 Відправка публічного ключа Y_B користувачу A...');
+        addLog(`   Y_B = ${clientPublicKey}`);
+        document.getElementById('step-6-data').innerHTML =
+          `Y_B = ${clientPublicKey}`;
+
+        socket.emit('sendPublicKeyB', {
+          publicKeyB: clientPublicKey,
+        });
+
+        document.getElementById('btn-send').disabled = true;
+      }
+
+      function modPow(base, exponent, modulus) {
+        if (modulus === 1) return 0;
+        let result = 1;
+        base = base % modulus;
+        while (exponent > 0) {
+          if (exponent % 2 === 1) {
+            result = (result * base) % modulus;
+          }
+          exponent = Math.floor(exponent / 2);
+          base = (base * base) % modulus;
+        }
+        return result;
+      }
+
+      function addLog(message) {
+        const logDiv = document.getElementById('log');
+        const logItem = document.createElement('div');
+        logItem.className = 'log-item';
+
+        const time = new Date().toLocaleTimeString('uk-UA');
+        logItem.innerHTML = `<span class="log-time">[${time}]</span>${message}`;
+
+        logDiv.insertBefore(logItem, logDiv.firstChild);
+      }
+
+      function toggleSection(id) {
+        const element = document.getElementById(id);
+        element.classList.toggle('active');
+      }
+
+      function generate10Primes() {
+        addLog('🔢 Запит на генерацію 10 простих чисел...');
+        addLog('⏳ Зачекайте, йде генерація з використанням тесту Ферма (k=4)...');
+        socket.emit('generate10Primes');
+      }
+
+      function clearAll() {
+        document.getElementById('param-p').textContent = '—';
+        document.getElementById('param-alpha').textContent = '—';
+        document.getElementById('param-ya').textContent = '—';
+        document.getElementById('param-kb').textContent = '—';
+        document.getElementById('param-yb').textContent = '—';
+        document.getElementById('param-attempts').textContent = '—';
+        document.getElementById('shared-secret').textContent = '—';
+        document.getElementById('log').innerHTML = '';
+        document.getElementById('verification-result').innerHTML = '';
+        document.getElementById('primes-result').innerHTML = '';
+
+        for (let i = 1; i <= 7; i++) {
+          document.getElementById(`step-${i}-data`).innerHTML = '';
+          if (i === 4 || i === 5) {
+            document.getElementById(`step-${i}-formula`).innerHTML = '';
+          }
+        }
+
+        document.getElementById('btn-init').disabled = false;
+        document.getElementById('btn-send').disabled = true;
+        serverParams = null;
+        clientSecretKey = null;
+        clientPublicKey = null;
+        setStep(1);
+        addLog('🗑️ Всі дані очищено');
+      }
+
+      window.onload = () => {
+        connectToServer();
+        addLog('🚀 Додаток запущено');
+      };
+    </script>
+  </body>
+</html>
