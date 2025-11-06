@@ -73,13 +73,11 @@ export const getPrimeNumber = () => {
         failedNumbers,
       };
     } else {
-      // Зберігаємо перші 5 невдалих спроб для логування
-      if (failedNumbers.length < 5) {
-        failedNumbers.push({
-          number: randomNumber,
-          reason: result.reason || 'Невідома причина',
-        });
-      }
+      // Зберігаємо ВСІ невдалі спроби
+      failedNumbers.push({
+        number: randomNumber,
+        reason: result.reason || 'Невідома причина',
+      });
     }
   }
 };
